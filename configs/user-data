@@ -1,0 +1,15 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: ubuntu-lab
+    username: cajunjon
+    password: "$6$rounds=4096$yourhashedpassword"
+  keyboard: us
+  locale: en_US
+  packages:
+    - net-tools
+    - openssh-server
+  storage:
+    layout:
+      name: direct
