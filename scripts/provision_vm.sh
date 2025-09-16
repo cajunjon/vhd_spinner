@@ -1,8 +1,8 @@
 #!/bin/bash
 # provision_vm.sh - Multi-OS VM provisioning script with dynamic profile loading, CRC check, libvirt preflight, dry-run mode, and smart boot mode
 # Author: CajunJon
-# Version: 0.1.0
-# Last Modified: 2025-09-13
+# Version: 0.2.0
+# Last Modified: 2025-09-16
 
 LOG_FILE="provision_vm.log"
 
@@ -36,7 +36,10 @@ check_and_install() {
             log "[DRY-RUN] Would install missing dependency: $pkg"
         else
             log "Installing missing dependency: $pkg..."
-            sudo apt-get update && sudo apt-get install -y "$pkg" || fail "Failed to install $pkg"
+if ! sudo apt-get update || ! sudo apt-get install -y "$pkg"; then
+    fail "Failed to install $pkg"
+fi
+
         fi
     else
         log "Dependency '$cmd' is already installed."
@@ -142,7 +145,7 @@ fi
 
 VM_NAME="$1"
 PROFILE="${VM_PROFILES[$VM_NAME]}"
-if [[ ! " ${AVAILABLE_PROFILES[*]} " =~ " $VM_NAME " ]]; then
+if [[ ! " ${AVAILABLE_PROFILES[*]} " =~ $VM_NAME ]]; then
     fail "Profile '$VM_NAME' is not available or ISO is missing."
 fi
 
@@ -224,14 +227,13 @@ else
       --memory "$MEMORY_MB" \
       --vcpus "$VCPUS" \
       --disk path="$VHD_PATH",format="$VHD_FORMAT" \
-      $CONFIG_DISK \
-      $DRIVER_DISK \
+      "$CONFIG_DISK" \
+      "$DRIVER_DISK" \
       --os-variant "$OS_VARIANT" \
       --graphics spice \
       --console pty,target_type=serial \
-      $BOOT_MODE \
+      "$BOOT_MODE" \
       --extra-args "$( [[ "$OS_VARIANT" == win* ]] && echo "autounattend.xml" || echo "console=ttyS0" )" || fail "VM creation failed"
     log "VM '$VM_NAME' created and booting."
 fi
-
 
